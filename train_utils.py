@@ -1,10 +1,14 @@
 import torch
 from scores import AverageMeter
-from scores import ProgressMeter, accuracy
+from scores import ProgressMeter, accuracy, Summary
+import time
+
 
     
 def train(data, model, criterion, optimizer, epoch):
+    
     device = "cuda"
+    data_time = AverageMeter('Time', ':6.3f', summary_type=Summary.SUM)
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
@@ -12,13 +16,15 @@ def train(data, model, criterion, optimizer, epoch):
     
     progress = ProgressMeter(
         len(train_loader),
-        [losses, top1, top5],
+        [data_time, losses, top1, top5],
         prefix="Epoch: [{}]".format(epoch))
     
     # switch to train mode
     model.train()
+    end = time.time()
     for i, (images, target) in enumerate(train_loader):
         
+        data_time.update(time.time() - end)
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
 
@@ -37,7 +43,10 @@ def train(data, model, criterion, optimizer, epoch):
         loss.backward()
         optimizer.step()
         
-        #if i % 64 == 0:
-            #progress.display(i + 1)
+        end = time.time()
+        
+        
+        if i % 64 == 0:
+            progress.display(i + 1)
             
     progress.display_summary()
